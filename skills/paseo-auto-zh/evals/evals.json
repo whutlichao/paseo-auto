@@ -1,0 +1,58 @@
+{
+  "skill_name": "paseo-auto-zh",
+  "evals": [
+    {
+      "id": 1,
+      "name": "single-ticket-fix-dry-run",
+      "prompt": "我们 alibot 仓库里 app/alibot/mentions.py 的提及解析会把 fenced code block（``` 与 ~~~ 围栏）里的 @成员 也解析成提及，导致代码示例误唤醒。帮我修掉、跑测试、开 PR 并合并。先只做派发计划，不要真的创建 Paseo agent、不要改代码：给出通道判定、workspace 参数、agent 参数和完整 spec。",
+      "expected_output": "判 B 通道；用 create_workspace 建独立 worktree（branch-off，base 取本轮解析出的默认分支，通常 origin/main），再 create_agent 显式带 workspaceId 与 notifyOnFinish: true；spec 含前置 skill 绝对路径、票型/门禁/测试档、code-review、PASEO-ASK/PASEO-DONE 契约、按 tracker 类型说明的票据位置；展示 send_agent_prompt 应答与通知驱动等待；不轮询。",
+      "assertions": [
+        "判定为 B 通道（单票实施），没有升级成整套 grill → spec → tickets 流程",
+        "create_workspace 使用 isolation=worktree、mode=branch-off，baseBranch 为本轮解析出的默认 base（通常 origin/main）",
+        "说明本轮默认 base 的解析方式或至少没有把 origin/main 当唯一固定值",
+        "create_agent 显式包含 workspaceId，未省略或复用 coordinator 工作区",
+        "create_agent 包含 notifyOnFinish: true",
+        "spec 包含前置 skill 的绝对路径（diagnosing-bugs 或 implement）",
+        "spec 包含票型、门禁与测试档行，且测试档有窄/宽判断与理由",
+        "spec 包含 code-review 字样（双轴 review 或其省略理由）",
+        "spec 定义了 PASEO-ASK 与 PASEO-DONE 的收尾契约",
+        "等待方式为完成通知驱动，明确不轮询 list_agents/get_agent_status",
+        "修 bug 要求了旧代码复现、新代码通过的回归证据",
+        "spec 的 Ownership/Answer 按 tracker 类型说明落点（远端 issue 或本地票），或明确本轮无票",
+        "说明终态通知一次性、权限通知不解除观察者（或至少不把权限应答当作需要重新武装）"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "multi-ticket-long-horizon-dry-run",
+      "prompt": "我想给 alibot 加一套完整的「团队空间」功能：创建/邀请/权限/审计四块，需求我还没完全想清楚，你别一张张问我，自己看着办，最后给我一个能合并的结果。先只做规划与派发预演，不要真的创建 agent、不要改仓库：说明你会怎么推进、第一个 worker 的完整 spec 长什么样。",
+      "expected_output": "判 C 通道；先收敛需求走 grill-with-docs → to-spec → to-tickets，G-tickets 后只派一个长程 implement-spec worker；workspace 用 <feature>-integration，spec 带 Tracker/Spec/Tickets/Integration branch/并发指针；明确嵌套 implementer 必须有独立 workspace，无法证明则串行；coordinator 只验收唯一集成 PR。",
+      "assertions": [
+        "判定为 C 通道，并说明完整实施请求的收敛链（grill-with-docs → to-spec → to-tickets → implement-spec）",
+        "没有在需求未收敛时直接派实施 worker",
+        "只派一个长程 integration worker，而不是一票一个",
+        "集成 workspace 使用 <feature>-integration 之类的分支名，并以本轮默认 base（通常 origin/main）为 base",
+        "spec 包含 Tracker、Spec、Tickets、Integration branch 与并发上限指针",
+        "要求 worker 先证明能为 implementer 建独立 workspace/agent，再花整张图",
+        "说明无法隔离时串行降级，且绝不共用 worktree",
+        "coordinator 只验收集成 PR，不进入嵌套 workspace",
+        "说明集成 PR 的 Door / Blast Radius 判定与单向门不自动合并"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "reply-classification-dry-run",
+      "prompt": "我在用 paseo-auto-zh 跑一个多票的活。现在两个 worker 都在等我回话：worker A 问登录页错误提示用「登录失败」还是「账号或密码错误」；worker B 问新加的日期工具函数放 src/lib/date 还是 src/utils/date。你分别怎么处理？先不要真的发消息，给我处理方案和要发出的 send_agent_prompt 内容。",
+      "expected_output": "A 属决策类（用户可观察文案），附倾向问人后再答；B 属细节类（目录位置），coordinator 依仓库约定代答。两者都用 send_agent_prompt 回复并说明重新武装通知；记录 Q→A 与依据。",
+      "assertions": [
+        "把 worker A 归为决策类，并说明需要附倾向请人定夺",
+        "没有把 worker A 的 recommended 直接当答案",
+        "把 worker B 归为细节类，由 coordinator 依据仓库约定代答",
+        "两条回复都使用 send_agent_prompt",
+        "说明 send_agent_prompt 会重新武装完成通知",
+        "记录了 Q → A（人定/代答）→ 理由的审计信息",
+        "没有用 AskUserQuestion 直接问用户细节类问题"
+      ]
+    }
+  ]
+}
