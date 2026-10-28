@@ -1,0 +1,58 @@
+{
+  "skill_name": "paseo-auto",
+  "evals": [
+    {
+      "id": 1,
+      "name": "single-ticket-fix-dry-run",
+      "prompt": "In our alibot repo, the mention parser in app/alibot/mentions.py also parses @member inside fenced code blocks (``` and ~~~ fences), so code samples wake people up by mistake. Fix it, run the tests, open a PR and merge it. For now produce only the dispatch plan — do not actually create a Paseo agent and do not change code: give the channel decision, the workspace parameters, the agent parameters and the complete spec.",
+      "expected_output": "Decides channel B; creates an isolated worktree with create_workspace (branch-off, base = this round's resolved default branch, usually origin/main), then create_agent explicitly carrying workspaceId and notifyOnFinish: true; the spec contains the pre-skill's absolute path, ticket type/gates/test tier, code-review, the PASEO-ASK/PASEO-DONE contract, and the ticket location explained per tracker type; shows the send_agent_prompt reply and notification-driven waiting; no polling.",
+      "assertions": [
+        "Judges it as channel B (single-ticket implementation) and does not escalate to the whole grill → spec → tickets flow",
+        "create_workspace uses isolation=worktree and mode=branch-off, with baseBranch set to this round's resolved default base (usually origin/main)",
+        "Explains how the round's default base is resolved, or at least does not treat origin/main as the only fixed value",
+        "create_agent explicitly includes workspaceId; it is neither omitted nor reused from the coordinator's workspace",
+        "create_agent includes notifyOnFinish: true",
+        "The spec contains the pre-skill's absolute path (diagnosing-bugs or implement)",
+        "The spec contains the ticket type, gate and test tier lines, and the test tier carries a narrow/wide decision with its reason",
+        "The spec contains the literal code-review (the two-axis review, or the reason it is omitted)",
+        "The spec defines the PASEO-ASK and PASEO-DONE closing contract",
+        "Waiting is driven by the completion notification, and it states explicitly that list_agents/get_agent_status are not polled",
+        "For a bug fix it requires regression evidence: reproducing on the old code and passing on the new",
+        "The spec's Ownership/Answer names the landing point per tracker type (a remote issue or a local ticket), or states explicitly that this round has no ticket",
+        "Explains that a terminal notification is one-shot and a permission notification does not release the observer (or at least does not treat a permission reply as needing a re-arm)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "multi-ticket-long-horizon-dry-run",
+      "prompt": "I want to add a complete \"team space\" feature to alibot: create, invite, permissions and audit, four parts. I haven't fully thought the requirements through, so don't ask me ticket by ticket — use your judgement, and in the end give me something mergeable. For now do only the planning and dispatch dry run, do not actually create an agent and do not change the repository: explain how you would drive it, and what the first worker's complete spec looks like.",
+      "expected_output": "Decides channel C; converges requirements first through grill-with-docs → to-spec → to-tickets, then after G-tickets dispatches a single long-horizon implement-spec worker; the workspace uses <feature>-integration and the spec carries Tracker/Spec/Tickets/Integration branch/concurrency pointers; states that nested implementers must have their own workspaces and that work degrades to serial when that cannot be proven; the coordinator accepts only the single integration PR.",
+      "assertions": [
+        "Judges it as channel C and states the convergence chain for a full implementation request (grill-with-docs → to-spec → to-tickets → implement-spec)",
+        "Does not dispatch an implementation worker before the requirements are converged",
+        "Dispatches exactly one long-horizon integration worker instead of one per ticket",
+        "The integration workspace uses a branch name such as <feature>-integration and is based on this round's default base (usually origin/main)",
+        "The spec contains Tracker, Spec, Tickets, Integration branch and the concurrency-limit pointers",
+        "Requires the worker to prove it can create isolated workspaces/agents for implementers before spending the whole map",
+        "States the serial degradation when isolation cannot be proven, and never shares a worktree",
+        "The coordinator accepts only the integration PR and does not enter a nested workspace",
+        "Explains the Door / Blast Radius judgement for the integration PR and that a one-way door is never auto-merged"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "reply-classification-dry-run",
+      "prompt": "I'm running a multi-ticket job with paseo-auto. Two workers are waiting for me to reply: worker A asks whether the login page error should say \"login failed\" or \"wrong account or password\"; worker B asks whether the new date utility function should go in src/lib/date or src/utils/date. How do you handle each? Don't actually send messages yet — give me the handling plan and the send_agent_prompt content you would send.",
+      "expected_output": "A is decision-class (user-observable copy), so attach a leaning and ask the human before answering; B is detail-class (directory placement), so the coordinator answers it from repository conventions. Both are answered with send_agent_prompt, which is explained to re-arm the notification; the Q→A record and its basis are logged.",
+      "assertions": [
+        "Classifies worker A as decision-class and states that a leaning must be attached and the human asked to settle it",
+        "Does not take worker A's recommended answer as the answer directly",
+        "Classifies worker B as detail-class and has the coordinator answer it from repository conventions",
+        "Both replies use send_agent_prompt",
+        "Explains that send_agent_prompt re-arms the completion notification",
+        "Records the audit trail Q → A (human-decided / answered-for-them) → reason",
+        "Does not use AskUserQuestion to ask the user the detail-class question directly"
+      ]
+    }
+  ]
+}
